@@ -15,15 +15,15 @@ from keras.layers import Dense, Activation
 from keras.layers import LSTM
 from keras.optimizers import RMSprop
 from keras.utils.data_utils import get_file
+from keras.models import model_from_json
 import numpy as np
 import random
 import sys
 import io
-# from data.Startups.scrapers import fetch
 from data.Startups import scrapers
 # reload(scrapers)
 
-names = scrapers.fetch()
+names = scrapers.get_startups()
 text = '\n\n'.join(names)
 
 # path = get_file('nietzsche.txt', ``
@@ -111,9 +111,40 @@ def on_epoch_end(epoch, logs):
         print()
 
 
+def gen(seed):
+    x_pred = np.zeros((1, maxlen, len(chars)))
+    for t, char in enumerate(seed[-3:]):
+        x_pred[0, t, char_indices[char]] = 1.
+        preds = model.predict(x_pred, verbose=0)[0]
+    next_index = sample(preds, 0.70)
+    next_char = indices_char[next_index]
+    if next_index == 1:
+        return seed
+    else:
+        seed += next_char
+        return gen(seed)
+
+
 print_callback = LambdaCallback(on_epoch_end=on_epoch_end)
 
 model.fit(x, y,
           batch_size=128,
-          epochs=10,
+          epochs=30,
           callbacks=[print_callback])
+
+model_json = model.to_json()
+with open("model.json", "w") as json_file:
+    json_file.write(model_json)
+# serialize weights to HDF5
+model.save_weights("model.h5")
+print("Saved model to disk")
+
+
+def load():
+    json_file = open('model.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    # load weights into new model
+    loaded_model.load_weights("model.h5")
+    print("Loaded model from disk")
