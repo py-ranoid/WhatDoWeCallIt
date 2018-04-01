@@ -25,7 +25,7 @@ def get_ind():
 def get_big():
     df = pd.read_csv('data/Startups/startups.csv')
     df.head()
-    big = list(df.dropna()['name'])
+    big = list(df.dropna()['name'].astype('str'))
     return big
 
 
