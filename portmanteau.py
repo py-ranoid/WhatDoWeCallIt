@@ -305,7 +305,11 @@ def get_phonemes(word):
 
 
 def get_phoneme_count(word):
-    return len(set(list(get_phonemes(word).strip())))
+    try:
+        return len(set(list(get_phonemes(word).strip())))
+    except:
+        print ("Warning : You might need to install espeak to account for phonemes while presicting word score.")
+        return 10
 
 
 def bridge(left, right, verbose=False):
