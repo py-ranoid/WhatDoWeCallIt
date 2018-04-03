@@ -21,5 +21,17 @@ Requirements
 Run `test_bridge.py`.<br>
 Enter 2 words (ideally names) you'd like to join.
 Names **must** be 3 letters or greater.
+Example : 
+
+        Word 1 : brad
+        Word 2 : angelina
+        Bradlina      0.701200
+        Brangelina    0.578985
+        Angebrad      0.567822
+        Braina        0.555771
+        Bradelina     0.540182
+        Bradgelina    0.511482
+        Bradina       0.508800
+        Angelrad      0.456382
 
 *Note : This model has been trained on popular US baby names and hence joins may reflect the same.*
