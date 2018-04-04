@@ -10,14 +10,6 @@ Original file is located at
 
 #@title Imports
 from __future__ import print_function
-from keras.utils.data_utils import get_file
-from keras.models import model_from_json
-from StringIO import StringIO
-import pandas as pd
-import numpy as np
-import random
-import sys
-import io
 from portmanteau import bridge
 
 line = "==========================="
