@@ -312,13 +312,15 @@ def get_phoneme_count(word):
         return 10
 
 
-def bridge(left, right, verbose=False):
+def bridge(left, right, verbose=False, reflexive=True):
     left = left.lower()
     right = right.lower()
     m1 = pd.Series(generate(left, right, verbose))
-    m2 = pd.Series(generate(right, left, verbose))
     res1 = m1.sort_values()
-    res2 = m2.sort_values()
-    all_words = res1.append(res2)
-    print (all_words[all_words.index.str.len() <=
-                     MAXLEN].sort_values(ascending=False)[:15])
+    if reflexive:
+        m2 = pd.Series(generate(right, left, verbose))
+        res2 = m2.sort_values()
+        all_words = res1.append(res2)
+    else:
+        all_words = res1
+    return (all_words[all_words.index.str.len() <= MAXLEN].sort_values(ascending=False)[:15])
