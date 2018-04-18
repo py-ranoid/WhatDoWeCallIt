@@ -80,3 +80,48 @@ def get_df(w):
 def get_words(w, lim=10):
     result = get_df(w)
     return None if result is None else result[:lim].index
+
+
+def get_wdump(desc="A friend for paying on websites."):
+    word_dump = {}
+    patterns = []
+    for i in nlp(unicode(desc)):
+        print i
+        if not i.is_stop and i.pos_ in ['ADJ', 'NOUN', 'VERB']:
+            syns = list(get_words(i, 5))
+            syns = syns + [i.lemma_] if i.lemma_ not in syns else syns
+            word_dump[i.lemma_] = syns
+            if i.pos_ == 'VERB':
+                patterns.append(
+                    {'left': i.lemma_, 'right': i.right_edge.lemma_})
+                if not i.right_edge.left_edge == i.right_edge:
+                    patterns.append(
+                        {'left': i.lemma_, 'right': i.right_edge.left_edge.lemma_})
+                    patterns.append(
+                        {'right': i.lemma_, 'left': i.right_edge.left_edge.lemma_})
+                prev = i
+                while True:
+                    core = prev.head
+                    print prev, core
+                    if core.pos_ == 'NOUN':
+                        patterns.append(
+                            {'right': i.lemma_, 'left': core.lemma_})
+                        patterns.append(
+                            {'left': i.lemma_, 'right': core.lemma_})
+                        break
+                    elif core == prev:
+                        break
+                    prev = core
+    return word_dump, patterns
+    # if not i.is_stop and i.pos in [91, 99]:
+    #     print get_words(i,30)
+
+
+all_pos = pd.Series()
+dump, patterns = get_wdump(desc)
+for p in patterns:
+    print p
+    for x in dump[p['left']]:
+        for y in dump[p['right']]:
+            all_pos = all_pos.append(bridge(x, y, reflexive=False)[:5])
+all_pos.shape
