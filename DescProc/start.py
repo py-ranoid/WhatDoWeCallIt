@@ -9,8 +9,8 @@
 
 import spacy
 import requests
-import pandas as pd
-from portmanteau import bridge
+from pandas import DataFrame
+# from portmanteau import bridge
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -42,25 +42,6 @@ def getsyns(word, param='spc'):
     return r.json()
 
 
-"""
-    jja 	Popular nouns modified by the given adjective, per Google Books Ngrams 	gradual → increase
-    jjb 	Popular adjectives used to modify the given noun, per Google Books Ngrams 	beach → sandy
-    syn 	Synonyms (words contained within the same WordNet synset) 	ocean → sea
-    trg 	"Triggers" (words that are statistically associated with the query word in the same piece of text.) 	cow → milking
-    ant 	Antonyms (per WordNet) 	late → early
-    spc 	"Kind of" (direct hypernyms, per WordNet) 	gondola → boat
-    gen 	"More general than" (direct hyponyms, per WordNet) 	boat → gondola
-    com 	"Comprises" (direct holonyms, per WordNet) 	car → accelerator
-    par 	"Part of" (direct meronyms, per WordNet) 	trunk → tree
-    bga 	Frequent followers (w′ such that P(w′|w) ≥ 0.001, per Google Books Ngrams) 	wreak → havoc
-    bgb 	Frequent predecessors (w′ such that P(w|w′) ≥ 0.001, per Google Books Ngrams) 	havoc → wreak
-    rhy 	Rhymes ("perfect" rhymes, per RhymeZone) 	spade → aid
-    nry 	Approximate rhymes (per RhymeZone) 	forest → chorus
-    hom 	Homophones (sound-alike words) 	course → coarse
-    cns 	Consonant match 	sample → simple
-"""
-
-
 def get_df(w):
     # param_list = ['spc', 'trg', 'gen', 'com', 'par']
     param_list = ['spc', 'trg']
@@ -74,11 +55,12 @@ def get_df(w):
     if len(words) == 0:
         return None
     else:
-        return pd.DataFrame(words).T.sort_values('sim', ascending=False)
+        return DataFrame(words).T.sort_values('sim', ascending=False)
 
 
 def get_words(w, lim=10):
     result = get_df(w)
+    print result
     return None if result is None else result[:lim].index
 
 
@@ -88,8 +70,8 @@ def get_wdump(desc="A friend for paying on websites."):
     for i in nlp(unicode(desc)):
         print i
         if not i.is_stop and i.pos_ in ['ADJ', 'NOUN', 'VERB']:
-            syns = list(get_words(i, 5))
-            syns = syns + [i.lemma_] if i.lemma_ not in syns else syns
+            syns = list(get_words(i, 9))
+            syns = syns[:-1] + [i.lemma_] if i.lemma_ not in syns else syns
             word_dump[i.lemma_] = syns
             if i.pos_ == 'VERB':
                 patterns.append(
@@ -117,11 +99,27 @@ def get_wdump(desc="A friend for paying on websites."):
     #     print get_words(i,30)
 
 
-all_pos = pd.Series()
-dump, patterns = get_wdump(desc)
-for p in patterns:
-    print p
-    for x in dump[p['left']]:
-        for y in dump[p['right']]:
-            all_pos = all_pos.append(bridge(x, y, reflexive=False)[:5])
-all_pos.shape
+def get_keywords(word, dump):
+    print "*******\nWord :", word
+    enum = enumerate(dump[word])
+    formatted = [(str(index) + '. ' + dw).ljust(16) for index, dw in enum]
+    print ''.join(formatted[:5])
+    print ''.join(formatted[5:])
+    choices = raw_input(
+        'Which synonyms would you like to drop? \n(Numbers seperated by spaces, Enter if all words are relevant)\n :')
+    word_pool = set()
+    while True:
+        more = raw_input('Enter a synonym for "' +
+                         word + '" (Enter to pass) :')
+        if not more:
+            break
+        else:
+            word_pool.add(more.strip())
+    drop_indices = set(map(int, choices.strip().split()))
+    for i in range(len(dump[word])):
+        try:
+            if i not in drop_indices:
+                word_pool.add(dump[word][i])
+        except:
+            pass
+    return word_pool
