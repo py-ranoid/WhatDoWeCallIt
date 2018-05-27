@@ -20,12 +20,13 @@ from keras.optimizers import RMSprop
 from keras.utils.data_utils import get_file
 from keras.models import model_from_json
 from StringIO import StringIO
+from scipy.stats import norm
 import pandas as pd
 import numpy as np
 import random
 import sys
 import io
-
+from hyphen import Hyphenator
 
 #@title Sequence generation
 
@@ -122,6 +123,17 @@ def on_epoch_end(epoch, logs):
         print()
 
 
+def hyp(word, factor):
+    global h_in
+    if len(word) < 4:
+        arr = [0]
+    else:
+        arr = [word.find(i) for i in h_in.syllables(unicode(word))]
+    x = np.ones(len(word))
+    x.put(arr, factor)
+    return x
+
+
 def gen(seed):
     x_pred = np.zeros((1, SEQLEN, len(chars)))
     for t, char in enumerate(seed[-3:]):
@@ -201,6 +213,9 @@ MAXLEN = 10
 ENDPENALTY = 0.7
 LEFT_BIAS = [0.07, 0.04, 0.02]
 PHONEME_WT = 0.2
+h_in = Hyphenator('en_IN')
+SYL_INIT_RIGHT = 2.6
+SYL_INIT_LEFT = 2.0
 
 
 def one_hot(word):
@@ -221,10 +236,17 @@ def sample_preds(preds, temperature=1.0):
     return preds
 
 
+def ohmygauss(length, sigma=1.8):
+    rv = norm(loc=0, scale=sigma)
+    x = np.arange(length)
+    return rv.pdf(x)
+
+
 def proc(left, right, verbose=False):
     best_matches = {}
     best_i = None
     best_i_score = -1
+    syll_factors_l = hyp(left, SYL_INIT_LEFT)
     for i in range(0, len(left) - MINLEFT + 1):
         # print ("I:", i)
         # Searching all sequences of size COMPARE in the right word
@@ -232,7 +254,10 @@ def proc(left, right, verbose=False):
         best_j = None
         best_j_score = -1
         best_matches[i] = {}
-        for j in range(0, len(right) - MINRIGHT + 1):
+        right_bound = len(right) - MINRIGHT + 1
+        gaus_factors = ohmygauss(right_bound)
+        syll_factors_r = hyp(right, SYL_INIT_RIGHT)
+        for j in range(0, right_bound):
             right_chars = right[j:j + COMPARE]
             s = 0
             for x in range(COMPARE):
@@ -260,6 +285,9 @@ def proc(left, right, verbose=False):
 
                 # Adding probability of bridging at c_index to s
                 s += biased_probs[0, c_index]
+
+            s = s * gaus_factors[j] * syll_factors_r[j] * syll_factors_l[i]
+
             if verbose:
                 print (i, j, s,)
             best_matches[i][j] = s
