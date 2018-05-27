@@ -40,5 +40,5 @@ for p in pattern_pool:
     for x in dump[p['left']]:
         for y in dump[p['right']]:
             all_pos = all_pos.append(bridge(x, y, reflexive=False)[:5])
-print ("\nPrinting upto 15 names :")
-print all_pos[all_pos.index.str.len() > MIN_SIZE].sort_values(ascending=False)[:15]
+print ("\nPrinting upto 30   names :")
+print all_pos[all_pos.index.str.len() > MIN_SIZE].sort_values(ascending=False)[:30]
